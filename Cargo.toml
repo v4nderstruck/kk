@@ -1,0 +1,6 @@
+[workspace]
+
+members = [
+  "kk-bin",
+  "kk-core"
+]

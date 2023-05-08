@@ -1,0 +1,16 @@
+[package]
+name = "kk-bin"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+kk-core = {path = "../kk-core"}
+crossterm = {version = "0.26.1", features = ["event-stream"]}
+tui = "0.19.0"
+anyhow = "1.0.71"
+tokio = { features = ["rt", "rt-multi-thread", "io-util", "io-std", "time", "process", "macros", "fs", "parking_lot"] }
+futures-util = {version = "0.3.28", features = ["std", "async-await"]}
+log = "0.4.17"
+env_logger = "0.10.0"
