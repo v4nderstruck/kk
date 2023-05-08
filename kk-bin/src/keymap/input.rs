@@ -1,7 +1,6 @@
 use crossterm::event::{KeyCode, MediaKeyCode, ModifierKeyCode};
 
 use anyhow::anyhow;
-use crate::{keymap::KeyMode, commands::Command};
 
 
 /// represents key input mappable in Config
@@ -12,6 +11,7 @@ pub struct KeyInput {
 }
 
 /// Taken from helix_view::input 
+/// effictively only takes the last key separated by "-" 
 impl std::str::FromStr for KeyInput {
     type Err = anyhow::Error;
 
@@ -162,10 +162,24 @@ mod tests {
             let key = KeyInput::from_str(":").unwrap();
             assert_eq!(key.code, KeyCode::Char(':'))
         }
+        {
+            let key = KeyInput::from_str("space").unwrap();
+            assert_eq!(key.code, KeyCode::Char(' '))
+        }
+        {
+            let key = KeyInput::from_str("space-w").unwrap();
+            assert_eq!(key.code, KeyCode::Char('w'))
+        }
     }
     #[test]
     fn parse_test_not_eq(){
-        let key = KeyInput::from_str("b").unwrap();
-        assert_ne!(key.code, KeyCode::Char('a'))
+        {
+            let key = KeyInput::from_str("b").unwrap();
+            assert_ne!(key.code, KeyCode::Char('a'))
+        }
+        {
+            let key = KeyInput::from_str("doesnotexits");
+            assert!(key.is_err())
+        }
     }
 }

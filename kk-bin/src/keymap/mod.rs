@@ -1,4 +1,5 @@
-mod key;
+mod input;
+mod map;
 
 pub enum KeyMode {
     Command,
@@ -6,4 +7,3 @@ pub enum KeyMode {
     Insert,
 }
 
-pub struct Keymap {}
