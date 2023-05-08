@@ -1,6 +1,6 @@
 mod fun;
 use fun::*;
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
 use crate::ui::exit_ui;
 
@@ -22,11 +22,13 @@ macro_rules! static_commands {
     }
 }
 
+#[derive(Debug)]
 pub struct Command {
     pub name: &'static str,
     fun: fn() -> anyhow::Result<()>,
     pub doc: &'static str
 }
+pub type ArcCommand = Arc<Command>;
 
 impl Command {
     pub fn exec(&self) -> anyhow::Result<()> {

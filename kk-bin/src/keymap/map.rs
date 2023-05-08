@@ -2,33 +2,31 @@ use std::{collections::HashMap, sync::Arc};
 
 use kk_core::DocumentMode;
 
-use crate::commands::Command;
+use crate::commands::{ArcCommand, Command};
 
 use super::input::KeyInput;
 
 /// used for matching
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum KeymapNodeInputType {
     Skip,
     Key(KeyInput),
 }
+
+#[derive(Debug, Clone)]
 pub struct KeymapNode {
     key: KeymapNodeInputType,
-    commands: Vec<Command>,
+    commands: Vec<ArcCommand>,
 }
 type ArcKeymapNode = Arc<KeymapNode>;
 
-pub enum KeymapTreeNodeType {
-    Subtree(KeymapTree),
-    Leaf(ArcKeymapNode),
+impl PartialEq for KeymapNode {
+    fn eq(&self, other: &Self) -> bool {
+        self.key == other.key
+    }
 }
-pub struct KeymapTree {
-    node: ArcKeymapNode,
-    children: Vec<KeymapTreeNodeType>,
-}
-pub struct Keymap {
-    mode: DocumentMode,
-    map: HashMap<DocumentMode, KeymapTree>,
-}
+
+impl Eq for KeymapNode {}
 
 impl KeymapNode {
     pub fn new_root() -> Self {
@@ -37,11 +35,14 @@ impl KeymapNode {
             commands: vec![],
         }
     }
-    pub fn new_node(key: KeyInput) -> Self {
+    pub fn new_input(key: KeyInput) -> Self {
         Self {
             key: KeymapNodeInputType::Key(key),
             commands: vec![],
         }
+    }
+    pub fn push_cmd(&mut self, cmd: Arc<Command>) {
+        self.commands.push(cmd)
     }
     pub fn run_cmds(&self) -> anyhow::Result<()> {
         for cmd in &self.commands {
@@ -51,6 +52,12 @@ impl KeymapNode {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct KeymapTree {
+    node: ArcKeymapNode,
+    children: Vec<ArcKeymapTree>,
+}
+type ArcKeymapTree = Arc<KeymapTree>;
 impl KeymapTree {
     pub fn new_root() -> Self {
         Self {
@@ -58,28 +65,80 @@ impl KeymapTree {
             children: Vec::new(),
         }
     }
+    pub fn new_node(node: ArcKeymapNode) -> Self {
+        Self {
+            node,
+            children: vec![],
+        }
+    }
     /// assumes that nodes are sorted in order of the input being matched
-    pub fn add_node(&mut self, node: KeymapTreeNodeType) {
+    pub fn add_node(&mut self, node: Arc<KeymapTree>) {
         self.children.push(node)
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct Keymap {
+    mode: DocumentMode,
+    map: HashMap<DocumentMode, ArcKeymapTree>,
+}
 impl Keymap {
     pub fn new() -> Self {
         Self {
             mode: DocumentMode::Normal,
             map: HashMap::from([
-                (DocumentMode::Normal, KeymapTree::new_root()),
-                (DocumentMode::Insert, KeymapTree::new_root())
+                (DocumentMode::Normal, Arc::new(KeymapTree::new_root())),
+                (DocumentMode::Insert, Arc::new(KeymapTree::new_root())),
             ]),
         }
     }
+
+    // peeks and checks whether a sequence of keymapping exists
+    pub fn map_exits(&self, keys: &[KeyInput]) -> bool {
+        todo!()
+    }
+    /// takes the document mode and the KeymapNodes to insert,
+    /// todo: arc cloning does not feel natural
     pub fn insert_mapping(
         &mut self,
         doc_mode: DocumentMode,
         nodes: Vec<ArcKeymapNode>,
     ) -> anyhow::Result<()> {
-        todo!()
+        if let Some(root_tree) = self.map.get_mut(&doc_mode) {
+            let mut current_tree_ptr = root_tree;
+            let last_element = nodes.len() - 1;
+            for (i, node) in nodes.into_iter().enumerate() {
+                // we have already a command bound to this key, continue down the tree
+                if let Some(pos) = current_tree_ptr
+                    .children
+                    .iter()
+                    .position(|e| e.node == node)
+                {
+                    // should continue down the tree
+                    {
+                        let tree_node = Arc::make_mut(current_tree_ptr);
+                        current_tree_ptr = tree_node.children.get_mut(pos).unwrap();
+                    }
+                    // last item, we should push the commands to the tree node
+                    if i == last_element {
+                        let tree_node = Arc::make_mut(&mut current_tree_ptr);
+                        let child_node = Arc::make_mut(&mut tree_node.node);
+                        for cmd in &node.commands {
+                            child_node.push_cmd(cmd.clone())
+                        }
+                    }
+                } else {
+                    // node does not exits yet, insert it
+                    let tree_node = Arc::make_mut(current_tree_ptr);
+                    tree_node
+                        .children
+                        .push(Arc::new(KeymapTree::new_node(node)));
+                    current_tree_ptr = tree_node.children.last_mut().unwrap();
+                }
+            }
+        }
+
+        Ok(())
     }
 }
 
@@ -89,17 +148,37 @@ mod tests {
 
     use crate::{commands::Command, keymap::input::KeyInput};
 
-    use super::KeymapNode;
+    use super::{Keymap, KeymapNode};
 
     #[test]
     fn node_creation_eq() {
         let n = KeymapNode::new_root();
-        let l = KeymapNode::new_node(KeyInput::from_str("a").unwrap());
+        let l = KeymapNode::new_input(KeyInput::from_str("a").unwrap());
         assert!(n.run_cmds().is_ok());
         assert!(l.run_cmds().is_ok());
     }
 
     #[test]
-    fn tree_creation_eq() {
+    fn insert_keymaps_eq() {
+        let mut keymap = Keymap::new();
+        let space = Arc::new(KeymapNode::new_input(KeyInput::from_str("space").unwrap()));
+        let a = Arc::new(KeymapNode::new_input(KeyInput::from_str("a").unwrap()));
+        let b = Arc::new(KeymapNode::new_input(KeyInput::from_str("b").unwrap()));
+        let c = Arc::new(KeymapNode::new_input(KeyInput::from_str("c").unwrap()));
+        let vec_space_a = vec![space, a];
+        let vec_b = vec![b];
+        let vec_c = vec![c];
+
+        keymap
+            .insert_mapping(kk_core::DocumentMode::Normal, vec_space_a)
+            .unwrap();
+        keymap
+            .insert_mapping(kk_core::DocumentMode::Normal, vec_b)
+            .unwrap();
+        keymap
+            .insert_mapping(kk_core::DocumentMode::Normal, vec_c)
+            .unwrap();
+
+        println!("{:#?}", keymap);
     }
 }
