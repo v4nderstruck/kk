@@ -14,3 +14,5 @@ tokio = { features = ["rt", "rt-multi-thread", "io-util", "io-std", "time", "pro
 futures-util = {version = "0.3.28", features = ["std", "async-await"]}
 log = "0.4.17"
 env_logger = "0.10.0"
+serde = { version = "1.0.162", features = ["derive"] }
+toml = "0.7.3"

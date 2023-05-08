@@ -2,13 +2,14 @@ use crossterm::event::{Event, KeyCode};
 use futures_util::Stream;
 use log::error;
 
-use crate::ui::{enter_ui, exit_ui};
+use crate::{ui::{enter_ui, exit_ui}, config::Config};
 
 #[derive(Debug)]
 pub struct KEditor {}
 
 impl KEditor {
     pub fn new() -> Self {
+        let config = Config::load(include_str!("../../.config/based.toml")).unwrap();
         Self {}
     }
 
