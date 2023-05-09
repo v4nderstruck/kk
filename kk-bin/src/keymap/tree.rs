@@ -1,10 +1,6 @@
-use std::{
-    collections::HashMap,
-    hash::Hash,
-    sync::{Arc},
-};
+use std::{collections::HashMap, hash::Hash, sync::Arc};
 
-
+use anyhow::{bail, Ok};
 
 use crate::commands::KCommand;
 
@@ -53,6 +49,25 @@ impl KeymapNode {
     pub fn get_cmds(&self) -> Vec<&'static KCommand> {
         self.commands.to_owned()
     }
+
+    pub fn merge(self, other: Self) -> anyhow::Result<Self> {
+        if self.key != other.key {
+            bail!(
+                "Cannot merge two nodes with different keys: {:?} and {:?}",
+                self,
+                other
+            );
+        }
+
+        Ok(Self {
+            key: self.key,
+            commands: self
+                .commands
+                .into_iter()
+                .chain(other.commands.into_iter())
+                .collect(),
+        })
+    }
 }
 
 pub type ArcKeymapTree = Arc<KeymapTree>;
@@ -96,13 +111,16 @@ impl KeymapTree {
             } else {
                 KeymapNode::new(key)
             };
-            // check whether node already exists
+            // check whether node alrea exists
             match search_tree.nodes.contains_key(&node) {
                 true => {
                     // exists, go down the tree
                     let tree = search_tree.nodes.get_mut(&node).unwrap();
                     match tree {
-                        Some(subtree) => search_tree = Arc::make_mut(subtree),
+                        Some(subtree) => {
+                            // how to insert with chained commands see test in keymap
+                            search_tree = Arc::make_mut(subtree);
+                        }
                         None => {
                             if i != last_item {
                                 tree.replace(Arc::new(KeymapTree::new()));

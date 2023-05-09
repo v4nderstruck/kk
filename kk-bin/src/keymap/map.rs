@@ -1,7 +1,4 @@
-use std::{
-    collections::HashMap,
-    sync::{Arc},
-};
+use std::{collections::HashMap, sync::Arc};
 
 use kk_core::DocumentMode;
 
@@ -119,13 +116,31 @@ mod tests {
         let d = KeyInputTypes::MATCH(KeyInput::from_str("d").unwrap());
 
         k.insert_chain(vec![space.clone(), a.clone()], vec![&KCommand::escape]);
-        k.insert_chain(vec![space.clone(), b.clone()], vec![&KCommand::nop]);
+        k.insert_chain(vec![space.clone(), b.clone()], vec![&KCommand::escape]);
         k.insert_chain(vec![c.clone()], vec![&KCommand::nop]);
         k.insert_chain(vec![d.clone()], vec![&KCommand::nop]);
         k.insert_single(KeymapNode::new_with_commands(
             KeyInputTypes::MATCH_ALL,
             vec![&KCommand::error],
         ));
+        k
+    }
+    fn setup_alternative() -> KeymapTree {
+        let mut k = KeymapTree::new();
+        let space = KeyInputTypes::MATCH(KeyInput::from_str("space").unwrap());
+        let a = KeyInputTypes::MATCH(KeyInput::from_str("a").unwrap());
+        let c = KeyInputTypes::MATCH(KeyInput::from_str("c").unwrap());
+        let d = KeyInputTypes::MATCH(KeyInput::from_str("d").unwrap());
+
+        k.insert_chain(vec![space.clone()], vec![&KCommand::escape]); // todo: out of order insert
+                                                                      // while chained
+        k.insert_chain(vec![space.clone(), a.clone()], vec![&KCommand::escape]);
+        k.insert_chain(vec![c.clone()], vec![&KCommand::nop]);
+        k.insert_single(KeymapNode::new_with_commands(
+            KeyInputTypes::MATCH_ALL,
+            vec![&KCommand::error],
+        ));
+        println!("{:#?}", k);
         k
     }
 
@@ -179,7 +194,7 @@ mod tests {
         assert_eq!(cmds[0].name, "nop");
         let cmds = keymap.get(KeyInput::from_str("space").unwrap());
         assert_eq!(cmds.len(), 0);
-        let cmds = keymap.get(KeyInput::from_str("a").unwrap());
+        let cmds = keymap.get(KeyInput::from_str("b").unwrap());
         assert_eq!(cmds.len(), 1);
         assert_eq!(cmds[0].name, "escape");
         let cmds = keymap.get(KeyInput::from_str("d").unwrap());
@@ -203,5 +218,18 @@ mod tests {
         let cmds = keymap.get(KeyInput::from_str("k").unwrap());
         assert_eq!(cmds.len(), 1);
         assert_eq!(cmds[0].name, "error");
+    }
+
+    #[test]
+    fn touch_key_chain() {
+        let mut keymap = Keymap::new();
+        keymap.load_keymap_tree(DocumentMode::Normal, Arc::new(setup_alternative()));
+
+        let cmds = keymap.get(KeyInput::from_str("space").unwrap());
+        assert_eq!(cmds.len(), 1);
+        assert_eq!(cmds[0].name, "escape"); // note: only works because of order 09-05-2023
+        let cmds = keymap.get(KeyInput::from_str("a").unwrap());
+        assert_eq!(cmds.len(), 1);
+        assert_eq!(cmds[0].name, "escape");
     }
 }
