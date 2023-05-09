@@ -43,7 +43,7 @@ class KeymapNode {
 class Command
 
 class KeymapTree {
-    +nodes: HashMap~KeymapNode|KeymapTree~ 
+    +nodes: HashMap~KeymapNode|Option~KeymapTree~~ 
 }
 
 class Keymap {
@@ -93,6 +93,7 @@ stateDiagram-v2
 - Use `Arc`(from `arc_swap`) to allow for multiple references to the same KeymapTree
 - Use `HashMap` for O(1) lookup of KeymapTree (and to avoid Tree Traversal
 Implementation hehe)
+- A subtree `None` denotes that it is the leaf
 - Use `serde` for config deserialization
 - Add Whitecard Character matching to allow for "any" key input
 

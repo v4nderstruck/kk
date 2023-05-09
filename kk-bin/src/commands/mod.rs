@@ -22,15 +22,15 @@ macro_rules! static_commands {
     }
 }
 
-#[derive(Debug)]
-pub struct Command {
+#[derive(Debug, Clone)]
+pub struct KCommand {
     pub name: &'static str,
     fun: fn() -> anyhow::Result<()>,
     pub doc: &'static str
 }
-pub type ArcCommand = Arc<Command>;
+pub type ArcKCommand = Arc<KCommand>;
 
-impl Command {
+impl KCommand {
     pub fn exec(&self) -> anyhow::Result<()> {
         Ok((self.fun)()?)
     }

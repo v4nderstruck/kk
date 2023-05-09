@@ -10,10 +10,11 @@ kk-core = {path = "../kk-core"}
 crossterm = {version = "0.26.1", features = ["event-stream"]}
 tui = "0.19.0"
 anyhow = "1.0.71"
-tokio = { features = ["rt", "rt-multi-thread", "io-util", "io-std", "time", "process", "macros", "fs", "parking_lot"] }
+tokio = { version="1.28.0", features = ["rt", "rt-multi-thread", "io-util", "io-std", "time", "process", "macros", "fs", "parking_lot"] }
 futures-util = {version = "0.3.28", features = ["std", "async-await"]}
 log = "0.4.17"
 env_logger = "0.10.0"
 serde = { version = "1.0.162", features = ["derive"] }
 toml = "0.7.3"
 sorted-insert = "0.2.3"
+arc-swap = "1.6.0"
