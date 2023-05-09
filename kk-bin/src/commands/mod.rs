@@ -26,7 +26,7 @@ macro_rules! static_commands {
 pub struct KCommand {
     pub name: &'static str,
     fun: fn() -> anyhow::Result<()>,
-    pub doc: &'static str
+    pub doc: &'static str,
 }
 pub type ArcKCommand = Arc<KCommand>;
 
@@ -35,8 +35,10 @@ impl KCommand {
         Ok((self.fun)()?)
     }
 
-
+    #[rustfmt::skip]
     static_commands!(
+        escape, "Escape from current mode",
         nop, "Does Nothing",
+        error, "Just an error",
     );
 }

@@ -77,7 +77,7 @@ stateDiagram-v2
 **Parsing Key inputs**
 
 State transitions based on the tree and current state. At each state, the
-commands are executed.
+commands are executed. Will follow the longest match approach!
 
 ```mermaid
 stateDiagram-v2
