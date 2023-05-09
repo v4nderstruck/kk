@@ -1,6 +1,6 @@
 use std::{
     collections::HashMap,
-    sync::{Arc, Weak},
+    sync::{Arc},
 };
 
 use kk_core::DocumentMode;
@@ -32,7 +32,7 @@ impl Keymap {
         self.maps.insert(doc_mod, tree);
     }
 
-    pub fn merge(&mut self, map: HashMap<DocumentMode, ArcKeymapTree>) {
+    pub fn merge(&mut self, _map: HashMap<DocumentMode, ArcKeymapTree>) {
         todo!()
     }
 
@@ -104,7 +104,7 @@ mod tests {
         commands::KCommand,
         keymap::{
             input::KeyInput,
-            tree::{ArcKeymapTree, KeyInputTypes, KeymapNode, KeymapTree},
+            tree::{KeyInputTypes, KeymapNode, KeymapTree},
         },
     };
 

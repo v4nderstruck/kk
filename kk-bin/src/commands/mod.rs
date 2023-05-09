@@ -1,8 +1,8 @@
 mod fun;
 use fun::*;
-use std::{collections::HashMap, sync::Arc};
+use std::{sync::Arc};
 
-use crate::ui::exit_ui;
+
 
 /// taken from helix_term::commands
 macro_rules! static_commands {

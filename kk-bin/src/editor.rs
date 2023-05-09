@@ -9,7 +9,7 @@ pub struct KEditor {}
 
 impl KEditor {
     pub fn new() -> Self {
-        let config = Config::load(include_str!("../../.config/based.toml")).unwrap();
+        let _config = Config::load(include_str!("../../.config/based.toml")).unwrap();
         Self {}
     }
 
@@ -44,7 +44,7 @@ impl KEditor {
     where
         S: Stream<Item = crossterm::Result<crossterm::event::Event>> + Unpin,
     {
-        let mut terminal = enter_ui()?;
+        let _terminal = enter_ui()?;
         let hook = std::panic::take_hook();
         std::panic::set_hook(Box::new(move |info| {
             let _ = exit_ui();
