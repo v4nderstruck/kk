@@ -7,18 +7,25 @@ use crate::commands::{ArcCommand, Command};
 use super::input::KeyInput;
 
 /// used for matching
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub enum KeymapNodeInputType {
     Skip,
     Key(KeyInput),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct KeymapNode {
     key: KeymapNodeInputType,
     commands: Vec<ArcCommand>,
 }
 type ArcKeymapNode = Arc<KeymapNode>;
+
+impl std::hash::Hash for KeymapNode {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.key.hash(state)
+    }
+}
+
 
 impl PartialEq for KeymapNode {
     fn eq(&self, other: &Self) -> bool {
@@ -54,26 +61,22 @@ impl KeymapNode {
 
 #[derive(Debug, Clone)]
 pub struct KeymapTree {
-    node: ArcKeymapNode,
-    children: Vec<ArcKeymapTree>,
+    map: HashMap<ArcKeymapNode, ArcKeymapTree>,
 }
 type ArcKeymapTree = Arc<KeymapTree>;
 impl KeymapTree {
-    pub fn new_root() -> Self {
+    pub fn new() -> Self {
         Self {
-            node: Arc::new(KeymapNode::new_root()),
-            children: Vec::new(),
-        }
-    }
-    pub fn new_node(node: ArcKeymapNode) -> Self {
-        Self {
-            node,
-            children: vec![],
+            map: HashMap::new(),
         }
     }
     /// assumes that nodes are sorted in order of the input being matched
-    pub fn add_node(&mut self, node: Arc<KeymapTree>) {
-        self.children.push(node)
+    pub fn add_node(&mut self, node: ArcKeymapNode) {
+        self.map.insert(node, Arc::new(KeymapTree::new()));
+    }
+
+    pub fn has_key_map(&self, key: &KeyInput) -> bool { 
+        if self.map.contains_key()
     }
 }
 
@@ -87,15 +90,18 @@ impl Keymap {
         Self {
             mode: DocumentMode::Normal,
             map: HashMap::from([
-                (DocumentMode::Normal, Arc::new(KeymapTree::new_root())),
-                (DocumentMode::Insert, Arc::new(KeymapTree::new_root())),
+                (DocumentMode::Normal, Arc::new(KeymapTree::new())),
+                (DocumentMode::Insert, Arc::new(KeymapTree::new())),
             ]),
         }
     }
 
     // peeks and checks whether a sequence of keymapping exists
-    pub fn map_exits(&self, keys: &[KeyInput]) -> bool {
-        todo!()
+    pub fn map_exits(&self, doc_mode: DocumentMode, keys: &[KeyInput]) -> bool {
+        let tree = self.map.get(&doc_mode).unwrap().clone();
+        for key in keys {
+        }
+        true
     }
     /// takes the document mode and the KeymapNodes to insert,
     /// todo: arc cloning does not feel natural
